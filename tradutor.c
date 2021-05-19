@@ -61,7 +61,7 @@ int main()
       parametros = sscanf(line, "function f%c p%c1 p%c2 p%c3", &nome, &tipo[0], &tipo[1], &tipo[2]);
       parametros--;
       printf(".globl f%c\n",nome);
-      printf("f%c :\n\n",nome);
+      printf("f%c :\n",nome);
       printf("     pushq %%rbp\n     movq %%rsp,%%rbp\n");  
    }
   
@@ -91,24 +91,54 @@ int main()
 	if(r==3 && carac == 'i'){
 	printf("     movl $%d,-%d(%%rbp)\n",valor,var[indice-1].endereco);
 	}
-	int indice2;
+	int indice2,tam;
 	r = sscanf(line, "vi%d = vi%d ", &indice,&indice2);
-	if(r==2){
+	if(r==2 && strlen(line)==9){
 	printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
 	printf("     movl %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
+	}
+	
+	r = sscanf(line, "pi%d = pi%d ", &indice,&indice2);
+	if(r==2 && indice == 1 && indice2 == 2){
+	printf("     movl %%esi ,%%edi\n");
+	}
+	if(r==2 && indice == 1 && indice2 == 3){
+	printf("     movl %%edx ,%%edi\n");
+	}
+	if(r==2 && indice == 2 && indice2 == 1){
+	printf("     movl %%edi ,%%esi\n");
+	}
+	if(r==2 && indice == 2 && indice2 == 3){
+	printf("     movl %%edx ,%%esi\n");
+	}
+	if(r==2 && indice == 3 && indice2 == 1){
+	printf("     movl %%edi ,%%edx\n");
+	}
+	if(r==2 && indice == 3 && indice2 == 2){
+	printf("     movl %%esi ,%%edx\n");
+	}
+	r = sscanf(line, "pi%d = vi%d ", &indice,&indice2);
+	if(r==2 && indice == 1){
+	printf("     movl -%d(%%rbp),%%edi\n",var[indice2-1].endereco);
+	}
+	if(r==2 && indice == 2){
+	printf("     movl -%d(%%rbp),%%esi\n",var[indice2-1].endereco);
+	}
+	if(r==2 && indice == 3){
+	printf("     movl -%d(%%rbp),%%edx\n",var[indice2-1].endereco);
 	}
 	char operador;
 	int registrador;
 	r = sscanf(line, "vi%d = pi%d %c vi%d", &indice,&registrador,&operador,&indice2);
 	if(r==4 && registrador == 1 && operador == '+'){
-	printf("     addl %%edi,-%d(%%rbp)\n",var[indice2-1].endereco);
-	printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
+	printf("     movl %%edi,%%r8d\n");
+	printf("     addl -%d(%%rbp),%%r8d\n",var[indice2-1].endereco);
 	printf("     addl %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
 	}
 	if(r==4 && registrador == 1 && operador == '*'){
-	printf("     imull %%edi,-%d(%%rbp)\n",var[indice2-1].endereco);
 	printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
-	printf("     imull %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
+	printf("     imull %%edi,%%r9d\n");
+	printf("     movl %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
 	}
 	if(r==4 && registrador == 2 && operador == '+'){
 	printf("     addl %%esi,-%d(%%rbp)\n",var[indice2-1].endereco);
@@ -116,9 +146,9 @@ int main()
 	printf("     addl %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
 	}
 	if(r==4 && registrador == 2 && operador == '*'){
-	printf("     imull %%esi,-%d(%%rbp)\n",var[indice2-1].endereco);
 	printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
-	printf("     imull %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
+	printf("     imull %%esi,%%r9d\n");
+	printf("     movl %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
 	}
 	if(r==4 && registrador == 3 && operador == '+'){
 	printf("     addl %%edx,-%d(%%rbp)\n",var[indice2-1].endereco);
@@ -126,14 +156,78 @@ int main()
 	printf("     addl %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
 	}
 	if(r==4 && registrador == 3 && operador == '*'){
-	printf("     imull %%edx,-%d(%%rbp)\n",var[indice2-1].endereco);
 	printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
-	printf("     imull %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
+	printf("     imull %%edx,%%r9d\n");
+	printf("     movl %%r9d,-%d(%%rbp)\n",var[indice-1].endereco);
 	}
 	int constante;
 	r = sscanf(line, "vi%d = vi%d %c ci%d", &indice,&indice2,&operador,&constante);
+      if (r==4 && operador== '+') {
+        printf("     movl -%d(%%rbp), %%eax\n",var[indice2-1].endereco);
+        printf("     addl $%d, %%eax\n",constante);
+        printf("     movl %%eax, -%d(%%rbp \n",var[indice-1].endereco);
+    }
+    if (r==4 && operador== '*') {
+        printf("     movl -%d(%%rbp), %%eax\n",var[indice2-1].endereco);
+        printf("     imull $%d, %%eax\n",constante);
+        printf("     movl %%eax, -%d(%%rbp) \n",var[indice-1].endereco);
+    }
+	
+	r = sscanf(line, "pi%d = vi%d %c vi%d", &registrador,&indice,&operador,&indice2);
+	if(r==4 && operador == '+' && registrador == 1){
+	printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
+        printf("     addl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
+        printf("     movl %%r9d,%%edi\n");
+	}
+	if(r==4 && operador == '+' && registrador == 2){
+	printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
+        printf("     addl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
+        printf("     movl %%r9d,%%esi\n");
+	}
+	if(r==4 && operador == '+' && registrador == 3){
+	printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
+        printf("     addl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
+        printf("     movl %%r9d,%%edx\n");
+	}
+	
+	if(r==4 && operador == '*' && registrador == 1){
+	printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
+	printf("     movl -%d(%%rbp),%%r8d\n",var[indice2-1].endereco);
+        printf("     imull %%r8d,%%r9d\n");
+        printf("     movl %%r9d,%%edi\n");
+	}
+	if(r==4 && operador == '*' && registrador == 2){
+	printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
+	printf("     movl -%d(%%rbp),%%r8d\n",var[indice2-1].endereco);
+        printf("     imull %%r8d,%%r9d\n");
+        printf("     movl %%r9d,%%esi\n");
+	}
+	if(r==4 && operador == '+' && registrador == 3){
+	printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
+	printf("     movl -%d(%%rbp),%%r8d\n",var[indice2-1].endereco);
+        printf("     imull %%r8d,%%r9d\n");
+        printf("     movl %%r9d,%%edx\n");
+	}
 	
 	
+    r= sscanf(line, "return vi%d", &indice);
+    if(r==1){
+        printf("     movl -%d(%%rbp), %%eax\n",var[indice-1].endereco);
+    }
+    r= sscanf(line, "return ci%d", &constante);
+    if(r==1){
+        printf("     movl $%d, %%eax\n",constante);
+    }
+    r= sscanf(line, "return pi%d", &registrador);
+    if(r==1 && registrador==1){
+        printf("     movl %%edi, %%eax\n");
+    }
+    if(r==1 && registrador==2){
+        printf("     movl %%esi, %%eax\n");
+    }
+    if(r==1 && registrador==3){
+        printf("     movl %%edx, %%eax\n");
+    }
       if (strlen(line)==3)
       if (strncmp(line, "end", 3) == 0) {
       printf("     leave\n     ret\n");
