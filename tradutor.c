@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define LINESZ 256
+
 struct vet{
  int i;
  int size;
@@ -66,22 +67,25 @@ int main()
    }
   
 	if (strncmp(line, "var", 3) == 0) {
-	r = sscanf(line, "vet vi%d", &var[vi].i);
+	r = sscanf(line, "var vi%d", &var[vi].i);
 	tamanho=tamanho+4;
 	var[vi].endereco=tamanho;
 	vi++;
 	}
 	if (strncmp(line, "vet", 3) == 0) {
 	r = sscanf(line, "vet va%d size ci%d", &vet[va].i,&vet[va].size);
-	tamanho=tamanho + vet[va].size;
-	vet[va].endereco=tamanho;
-	va++;
+	tamanho=tamanho + vet[vi].size * 4;
+	vet[vi].endereco=tamanho;
+	vi++;
 	}
 	if (strncmp(line, "enddef", 6) == 0){
+	if(parametros == 1) tamanho = tamanho + 8;
+	if(parametros == 2) tamanho = tamanho + 16;
+	if(parametros == 3) tamanho = tamanho + 24;
 	while(tamanho % 16 !=0)tamanho++;
 	printf("     subq $%d,%%rsp\n",tamanho);
-	for(i=0;i<va;i++) printf("     movl $%d,-%d(%%rbp)\n",vet[i].valor, vet[i].endereco);
-	for(i=0;i<vi;i++) printf("     movl $%d,-%d(%%rbp)\n",var[i].valor, var[i].endereco);
+	//for(i=0;i<va;i++) printf("     movl $%d,-%d(%%rbp)\n",vet[i].valor, vet[i].endereco);
+	//for(i=0;i<vi;i++) printf("     movl $%d,-%d(%%rbp)\n",var[i].valor, var[i].endereco);
 	flag=1;
 	}
 	
@@ -208,8 +212,66 @@ int main()
         printf("     imull %%r8d,%%r9d\n");
         printf("     movl %%r9d,%%edx\n");
 	}
+	int getarray;
+	r = sscanf(line, "get va%d index ci%d to vi%d ",&indice,&constante,&indice2);
+	if(r==3){
+	getarray=vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movq -%d(%%rbp),%%r9d\n",getarray);
+	printf("     movq %%r9d,-%d(%%rbp)\n",var[indice2 - 1].endereco);
+	}
 	
+	r = sscanf(line, "get va%d index ci%d to pi%d ",&indice,&constante,&indice2);
+	if(r==3 && indice2 == 1){
+	getarray=vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl -%d(%%rbp),%%edi\n",getarray);
+	}
+	if(r==3 && indice2 == 2){
+	getarray=vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl -%d(%%rbp),%%esi\n",getarray);
+	}
+	if(r==3 && indice2 == 3){
+	getarray=vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl -%d(%%rbp),%%edx\n",getarray);
+	}
+       // fazer o get quando for parametro array
+	int constante2;
+	r = sscanf(line, "set va%d index ci%d with ci%d",&indice,&constante,&constante2);
+	if(r==3){
+	getarray = vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl $%d,-%d(%%rbp)\n",constante2,getarray);
+	}
+	r = sscanf(line, "set va%d index ci%d with pi%d",&indice,&constante,&indice2);
+	if(r==3 && indice2 == 1){
+	getarray = vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl %%edi,-%d(%%rbp)\n",getarray);
+	}
+	if(r==3 && indice2 == 2){
+	getarray = vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl %%esi,-%d(%%rbp)\n",getarray);
+	}
+	if(r==3 && indice2 == 3){
+	getarray = vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl %%edx,-%d(%%rbp)\n",getarray);
+	}
+	r = sscanf(line, "set va%d index ci%d with vi%d",&indice,&constante,&indice2);
+	if(r==3){
+	getarray = vet[indice-1].endereco;
+	getarray=getarray - constante * 4;
+	printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
+	printf("     movl %%r9d,-%d(%%rbp)\n",getarray);
+	}
+	//r = sscanf(line, "if vi%d",&indice);
+	//if(r==1){
 	
+	//}
     r= sscanf(line, "return vi%d", &indice);
     if(r==1){
         printf("     movl -%d(%%rbp), %%eax\n",var[indice-1].endereco);
