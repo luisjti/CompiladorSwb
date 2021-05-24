@@ -66,17 +66,18 @@ int main()
    }
   
 	if (strncmp(line, "var", 3) == 0) {
-	r = sscanf(line, "vet vi%d", &var[vi].i);
+	r = sscanf(line, "var vi%d", &var[vi].i);
 	tamanho=tamanho+4;
 	var[vi].endereco=tamanho;
 	vi++;
 	}
 	if (strncmp(line, "vet", 3) == 0) {
 	r = sscanf(line, "vet va%d size ci%d", &vet[va].i,&vet[va].size);
-	tamanho=tamanho + vet[va].size;
-	vet[va].endereco=tamanho;
-	va++;
+	tamanho=tamanho + vet[vi].size * 4;
+	vet[vi].endereco=tamanho;
+	vi++;
 	}
+	
 	if (strncmp(line, "enddef", 6) == 0){
 	while(tamanho % 16 !=0)tamanho++;
 	printf("     subq $%d,%%rsp\n",tamanho);
@@ -209,32 +210,33 @@ int main()
         printf("     movl %%r9d,%%edx\n");
     }
 
-    if(r==4 && operador == '' && registrador == 1){
+    if(r==4 && operador == '*' && registrador == 1){
 		printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
 		printf("     movl -%d(%%rbp),%%r8d\n",var[indice2-1].endereco);
         printf("     imull %%r8d,%%r9d\n");
         printf("     movl %%r9d,%%edi\n");
     }
-    if(r==4 && operador == '' && registrador == 2){
+    if(r==4 && operador == '*' && registrador == 2){
 		printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
 		printf("     movl -%d(%%rbp),%%r8d\n",var[indice2-1].endereco);
         printf("     imull %%r8d,%%r9d\n");
         printf("     movl %%r9d,%%esi\n");
     }
-    if(r==4 && operador == '+' && registrador == 3){
+    if(r==4 && operador == '*' && registrador == 3){
 		printf("     movl -%d(%%rbp),%%r9d\n",var[indice-1].endereco);
 		printf("     movl -%d(%%rbp),%%r8d\n",var[indice2-1].endereco);
         printf("     imull %%r8d,%%r9d\n");
         printf("     movl %%r9d,%%edx\n");
     }
 	//chamada de funcao
+	int indice3,constante2,registrador2;
 	r = sscanf(line, "vi%d = call f%d vi%d ci%d", &indice,&nome,&indice2,&constante);
 	if(r==4 && strlen(line)==21) {
 		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
 		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
 		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
-		printf("     movl -%d(%%rbp), %%edi",var[indice-1].endereco);
-		printf("     movl $%d, %%esi",constante);
+		printf("     movl -%d(%%rbp),%%edi\n",var[indice2-1].endereco);
+		printf("     movl $%d,%%esi",constante);
 		printf("     call f%d\n",nome);
 		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
 		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
@@ -245,7 +247,7 @@ int main()
 		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
 		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
 		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
-		printf("     movl -%d(%%rbp), %%edi",var[indice-1].endereco);
+		printf("     movl -%d(%%rbp),%%edi\n",var[indice2-1].endereco);
 		printf("     call f%d\n",nome);
 		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
 		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
@@ -262,7 +264,174 @@ int main()
 		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
 		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
 	}
-	
+	r = sscanf(line, "vi%d = call f%d vi%d vi%d", &indice,&nome,&indice2,&indice3);
+	if(r==4 && strlen(line)==21) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl -%d(%%rbp),%%edi\n",var[indice2-1].endereco);
+		printf("     movl -%d(%%rbp),%%esi\n",var[indice3-1]);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	r = sscanf(line, "vi%d = call f%d ci%d vi%d", &indice,&nome,&constante,&indice2);
+	if(r==4 && strlen(line)==21) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl $%d,%%edi\n",constante);
+		printf("     movl -%d(%%rbp),%%esi\n",var[indice2-1].endereco);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	if(r==3 && strlen(line)==17) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl $%d,%%edi\n",constante);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	r = sscanf(line, "vi%d = call f%d ci%d ci%d", &indice,&nome,&constante,&constante2);
+	if(r==4 && strlen(line)==21) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl $%d,%%edi\n",constante);
+		printf("     movl $%d,%%esi\n",constante2);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	r = sscanf(line, "vi%d = call f%d vi%d pi%d", &indice,&nome,&indice2,&registrador);
+	if(r==4 && strlen(line)==21 && registrador==1) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl %%edi,%%esi\n");
+		printf("     movl movq -%d(%%rbp),%%edi\n",var[indice2-1]);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	if(r==4 && strlen(line)==21 && registrador==2) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl movq -%d(%%rbp),%%edi\n",var[indice2-1]);
+		printf("     movl %%esi,%%esi\n");
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	if(r==4 && strlen(line)==21 && registrador==3) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl movq -%d(%%rbp),%%edi\n",var[indice2-1]);
+		printf("     movl %%edx,%%esi\n");
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	r = sscanf(line, "vi%d = call f%d pi%d vi%d", &indice,&nome,&registrador,&indice2);
+	if(r==4 && strlen(line)==21 && registrador==1) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl -%d(%%rbp),%%esi\n",var[indice2-1].endereco);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	if(r==4 && strlen(line)==21 && registrador==2) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl %%esi,%%edi\n");
+		printf("     movl -%d(%%rbp),%%esi\n",var[indice2-1].endereco);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	if(r==4 && strlen(line)==21 && registrador==3) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl %%edx,%%edi\n");
+		printf("     movl -%d(%%rbp),%%esi\n",var[indice2-1].endereco);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	r = sscanf(line, "vi%d = call f%d pi%d pi%d", &indice,&nome,&registrador,&registrador2);
+	if(r==4 && strlen(line)==21 && ((registrador==1 && registrador2==2) || (registrador==2 && registrador2==1))) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	if(r==4 && strlen(line)==21 && ((registrador==1 && registrador2==3) || (registrador==3 && registrador2==1))) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl %%edx,%%esi\n");
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	if(r==4 && strlen(line)==21 && ((registrador==2 && registrador2==3) || (registrador==3 && registrador2==2))) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl %%edx,%%edi\n");
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
+	r = sscanf(line, "pi%d = call f%d vi%d vi%d", &registrador,&nome,&registrador,&registrador2);
+	if(r==4 && strlen(line)==21) {
+		printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+		printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+		printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
+		printf("     movl %%edx,%%edi\n");
+		printf("     call f%d\n",nome);
+		printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+		printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+		printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+		printf("     movl %%eax,-%d(%%rbp) \n",var[indice-1].endereco);
+	}
 	//fim chamada de funcao
 	//fim bloco de operacoes
 	
