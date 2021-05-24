@@ -49,6 +49,7 @@ int main()
   int flag=0;
   char carac;
   int parametros;
+  int countif=1;
   printf(".section .rodata\n\n"
           ".data\n\n"
           ".text\n\n"
@@ -238,6 +239,45 @@ int main()
 	printf("     movl -%d(%%rbp),%%edx\n",getarray);
 	}
        // fazer o get quando for parametro array
+       r = sscanf(line, "get pa%d index ci%d to pi%d ",&indice,&constante,&indice2);
+       if(r==3 && indice == 1 && indice2 == 2){
+       getarray = constante * 4;
+       printf("     movl %d(%%rdi),%%esi\n",getarray);
+       }
+         if(r==3 && indice == 1 && indice2 == 3){
+       getarray = constante * 4;
+       printf("     movl %d(%%rdi),%%edx\n",getarray);
+       }
+	if(r==3 && indice == 2 && indice2 == 1){
+       getarray = constante * 4;
+       printf("     movl %d(%%rsi),%%edi\n",getarray);
+       }
+       if(r==3 && indice == 2 && indice2 == 3){
+       getarray = constante * 4;
+       printf("     movl %d(%%rsi),%%edx\n",getarray);
+       }
+       if(r==3 && indice == 3 && indice2 == 1){
+       getarray = constante * 4;
+       printf("     movl %d(%%rdx),%%edi\n",getarray);
+       }
+       if(r==3 && indice == 3 && indice2 == 2){
+       getarray = constante * 4;
+       printf("     movl %d(%%rdx),%%esi\n",getarray);
+       }
+       r = sscanf(line, "get pa%d index ci%d to vi%d ",&indice,&constante,&indice2);
+	if(r==3 && indice == 1){
+       getarray = constante * 4;
+       printf("     movl %d(%%rdi),-%d(%%rbp)\n",getarray,var[indice2-1].endereco);
+       }
+       if(r==3 && indice == 2){
+       getarray = constante * 4;
+       printf("     movl %d(%%rsi),-%d(%%rbp)\n",getarray,var[indice2-1].endereco);
+       }
+       
+	if(r==3 && indice == 3){
+       getarray = constante * 4;
+       printf("     movl %d(%%rdx),-%d(%%rbp)\n",getarray,var[indice2-1].endereco);
+       }
 	int constante2;
 	r = sscanf(line, "set va%d index ci%d with ci%d",&indice,&constante,&constante2);
 	if(r==3){
@@ -268,10 +308,34 @@ int main()
 	printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
 	printf("     movl %%r9d,-%d(%%rbp)\n",getarray);
 	}
-	//r = sscanf(line, "if vi%d",&indice);
-	//if(r==1){
-	
-	//}
+	r = sscanf(line, "if vi%d",&indice);
+	if(r==1){
+	printf("     cmpl $0,-%d(%%rbp)\n",var[indice-1].endereco);
+	printf("     jne endif%d\n",countif);
+	}
+	r = sscanf(line, "if pi%d",&indice);
+	if(r==1 && indice == 1){
+	printf("     cmpl $0,%%edi\n");
+	printf("     jne endif%d\n",countif);
+	}
+	if(r==1 && indice == 2){
+	printf("     cmpl $0,%%esi\n");
+	printf("     jne endif%d\n",countif);
+	}
+	if(r==1 && indice == 1){
+	printf("     cmpl $0,%%edx\n");
+	printf("     jne endif%d\n",countif);
+	}
+	r = sscanf(line, "if ci%d",&constante);
+	if(r==1){
+	printf("     cmpl $0,%d\n",constante);
+	printf("     jne endif%d\n",countif);
+	}
+	if (strncmp(line, "endif", 6) == 0){
+	printf("endif%d:\n",countif);
+	countif++;
+	}
+	//fazer set parametro array
     r= sscanf(line, "return vi%d", &indice);
     if(r==1){
         printf("     movl -%d(%%rbp), %%eax\n",var[indice-1].endereco);
