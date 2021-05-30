@@ -17,7 +17,7 @@ struct var{
 struct vet vet[5];
 struct var var[5];
 
-int marker=0;
+int parametros=0;
 
 // Remove o '\n' do fim da linha
 void remove_newline(char *ptr)
@@ -110,14 +110,28 @@ void vetI(int pos, struct vet * x){
 }
 
 void salvaR (int tamanho){
+	if(parametros==1)
+	printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+	if(parametros==2){
+	printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
+	printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
+}	if(parametros==3){
 	printf("     movq %%rdi,-%d(%%rbp)\n",tamanho+8);
 	printf("     movq %%rsi,-%d(%%rbp)\n",tamanho+16);
 	printf("     movq %%rdx,-%d(%%rbp)\n",tamanho+24);
 }
+}
 void recuperaR (int tamanho){
+	if(parametros==1)
+	printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+	if(parametros==2){
+	printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
+	printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
+}	if(parametros==3){
 	printf("     movq -%d(%%rbp),%%rdi\n",tamanho+8);
 	printf("     movq -%d(%%rbp),%%rsi\n",tamanho+16);
 	printf("     movq -%d(%%rbp),%%rdx\n",tamanho+24);
+}
 }
 int main()
 {
@@ -126,7 +140,6 @@ int main()
   int r,va=0,vi=0;
   int count = 0;
   int tamanho=0;
-  int parametros;
   int countif=1;
   int getPos;
   int indice2;
@@ -148,6 +161,7 @@ int main()
     
     if (strncmp(line, "function", 7) == 0) {
 	  tamanho=0;
+	  vi=0;
       parametros = sscanf(line, "function f%c p%c1 p%c2 p%c3", &nome, &tipo[0], &tipo[1], &tipo[2]);
       parametros--;
       printf(".globl f%c\n",nome);
@@ -162,13 +176,12 @@ int main()
 		vi++;
 	}
 	if (strncmp(line, "vet", 3) == 0) {
-		r = sscanf(line, "vet va%d size ci%d", &vet[va].i,&vet[va].size);
+		r = sscanf(line, "vet va%d size ci%d", &vet[vi].i,&vet[vi].size);
 		tamanho=tamanho + vet[vi].size * 4;
 		vet[vi].endereco=tamanho;
 		vi++;
 	}
 	if (strncmp(line, "enddef", 6) == 0){
-		parametros++;
 		int auxtamanho = tamanho;
 		if(parametros == 1) auxtamanho = auxtamanho + 8;
 		if(parametros == 2) auxtamanho = auxtamanho + 16;
@@ -179,7 +192,6 @@ int main()
 	
 	while(auxtamanho % 16 !=0)auxtamanho++;
 		printf("     subq $%d,%%rsp\n",auxtamanho);
-		parametros--;
 	}
 	// início atribuição de valores
 	atribuicao=1;
@@ -865,10 +877,61 @@ int main()
 		printf("     movq -%d(%%rbp),%%rdx\n",getPos);
 	}
 	// fim atribuições de valores 
-	//início chamada de função
+	//início chamadas de função
 	char c1,c2,c3,c4,c5,c6;
 	int indice4;
 	r = sscanf(line, "vi%d = call f%d %c%c%d %c%c%d %c%c%d", &indice,&nome,&c1,&c2,&indice2,&c3,&c4,&indice3,&c5,&c6,&indice4);
+	if(r==11 && strlen(line)==25){
+		salvaR(tamanho);
+		if(c1== 'v' && c2=='i'){
+		varI(1,&var[indice2-1]);
+		}
+		if(c3== 'v' && c4=='i'){
+		varI(2,&var[indice3-1]);
+		}
+		if(c5== 'v' && c6=='i'){
+		varI(3,&var[indice4-1]);
+		}
+		if(c1== 'v' && c2=='a'){
+		vetI(1,&vet[indice2-1]);
+		}
+		if(c3== 'v' && c4=='a'){
+		vetI(2,&vet[indice3-1]);
+		}
+		if(c5== 'v' && c6=='a'){
+		vetI(3,&vet[indice4-1]);
+		}
+		if(c1== 'c' && c2=='i'){
+		cons(1,indice2);
+		}
+		if(c3== 'c' && c4=='i'){
+		cons(2,indice3);
+		}
+		if(c5== 'c' && c6=='i'){
+		cons(3,indice4);
+		}
+		if(c1== 'p' && c2=='i'){
+		pi(1,indice2,tamanho);
+		}
+		if(c3== 'p' && c4=='i'){
+		pi(2,indice3,tamanho);
+		}
+		if(c5== 'p' && c6=='i'){
+		pi(3,indice4,tamanho);
+		}
+		if(c1== 'p' && c2=='a'){
+		pa(1,indice2,tamanho);
+		}
+		if(c3== 'p' && c4=='a'){
+		pa(2,indice3,tamanho);
+		}
+		if(c5== 'p' && c6=='a'){
+		pa(3,indice4,tamanho);
+		}
+		printf("     call f%d\n",nome);
+		recuperaR(tamanho);
+		printf("     movl %%eax,-%d(%%rbp)\n",var[indice-1].endereco);
+	}
 	if(r==8 && strlen(line)==21){
 		salvaR(tamanho);
 		if(c1== 'v' && c2=='i'){
@@ -903,6 +966,28 @@ int main()
 		}
 		printf("     call f%d\n",nome);
 		recuperaR(tamanho);
+		printf("     movl %%eax,-%d(%%rbp)\n",var[indice-1].endereco);
+	}
+	if(r==5 && strlen(line)==17){
+		salvaR(tamanho);
+		if(c1== 'v' && c2=='i'){
+		varI(1,&var[indice2-1]);
+		}
+		if(c1== 'v' && c2=='a'){
+		vetI(1,&vet[indice2-1]);
+		}
+		if(c1== 'c' && c2=='i'){
+		cons(1,indice2);
+		}
+		if(c1== 'p' && c2=='i'){
+		pi(1,indice2,tamanho);
+		}
+		if(c1== 'p' && c2=='a'){
+		pa(1,indice2,tamanho);
+		}
+		printf("     call f%d\n",nome);
+		recuperaR(tamanho);
+		printf("     movl %%eax,-%d(%%rbp)\n",var[indice-1].endereco);
 	}
 	//fim chamadas de função
 	//início set 
@@ -910,7 +995,7 @@ int main()
 	r = sscanf(line, "set va%d index ci%d with vi%d ",&indice,&constante,&indice2);
 	if(r==3){
 		setarray=vet[indice-1].endereco;
-		setarray=setarray - constante * 4;
+		setarray=setarray - (constante-1) * 4;
 		printf("     movq -%d(%%rbp),%%r9d,\n",var[indice2 - 1].endereco);
 		printf("     movq %%r9d,-%d(%%rbp)\n",setarray);
 	}
@@ -940,53 +1025,53 @@ int main()
        // set com parâmetro
     r = sscanf(line, "set pa%d index ci%d with pi%d ",&indice,&constante,&indice2);
     if(r==3 && indice == 1 && indice2 == 2){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl %%esi, %d(%%rdi)\n",setarray);
        }
     if(r==3 && indice == 1 && indice2 == 3){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl %%edx, %d(%%rdi)\n",setarray);
        }
 	if(r==3 && indice == 2 && indice2 == 1){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl %%edi,%d(%%rsi)\n",setarray);
        }
     if(r==3 && indice == 2 && indice2 == 3){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl %%edx,%d(%%rsi)\n",setarray);
        }
     if(r==3 && indice == 3 && indice2 == 1){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl %%edi,%d(%%rdx)\n",setarray);
        }
     if(r==3 && indice == 3 && indice2 == 2){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl %%esi,%d(%%rdx)\n",setarray);
        }
        r = sscanf(line, "set pa%d index ci%d with vi%d ",&indice,&constante,&indice2);
 	if(r==3 && indice == 1){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl -%d(%%rbp),%d(%%rdi)\n",var[indice2-1].endereco,setarray);
        }
     if(r==3 && indice == 2){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl -%d(%%rbp),%d(%%rsi)\n",var[indice2-1].endereco,setarray);
        }
 	if(r==3 && indice == 3){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
        printf("     movl -%d(%%rbp),%d(%%rdx)\n",var[indice2-1].endereco,setarray);
        }
 	   r = sscanf(line, "set pa%d index ci%d with ci%d ",&indice,&constante,&indice2);
 	if(r==3 && indice == 1){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
 	   printf("     movl $%d,%d(%%rdi)\n",constante2,setarray);
 	   }
 	if(r==3 && indice == 2){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
 	   printf("     movl $%d,%d(%%rsi)\n",constante2,setarray);
 	   }
 	if(r==3 && indice == 3){
-       setarray = constante * 4;
+       setarray = (constante-1) * 4;
 	   printf("     movl $%d,%d(%%rdx)\n",constante2,setarray);
 	   }
 	//fim set
@@ -1019,41 +1104,41 @@ int main()
     //get com parâmetro de array
     r = sscanf(line, "get pa%d index ci%d to pi%d ",&indice,&constante,&indice2);
     if(r==3 && indice == 1 && indice2 == 2){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rdi),%%esi\n",getarray);
        }
     if(r==3 && indice == 1 && indice2 == 3){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rdi),%%edx\n",getarray);
        }
 	if(r==3 && indice == 2 && indice2 == 1){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rsi),%%edi\n",getarray);
        }
     if(r==3 && indice == 2 && indice2 == 3){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rsi),%%edx\n",getarray);
        }
     if(r==3 && indice == 3 && indice2 == 1){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rdx),%%edi\n",getarray);
        }
     if(r==3 && indice == 3 && indice2 == 2){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rdx),%%esi\n",getarray);
        }
        r = sscanf(line, "get pa%d index ci%d to vi%d ",&indice,&constante,&indice2);
 	if(r==3 && indice == 1){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rdi),-%d(%%rbp)\n",getarray,var[indice2-1].endereco);
        }
        if(r==3 && indice == 2){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rsi),-%d(%%rbp)\n",getarray,var[indice2-1].endereco);
        }
        
 	if(r==3 && indice == 3){
-       getarray = constante * 4;
+       getarray = (constante-1) * 4;
        printf("     movl %d(%%rdx),-%d(%%rbp)\n",getarray,var[indice2-1].endereco);
        }
 	 //fim get
