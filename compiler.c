@@ -135,9 +135,10 @@ void recuperaR (int tamanho){
 }
 int main()
 {
-  char nome,tipo[3],line[LINESZ],operador;
+  char tipo[3],line[LINESZ],operador;
+  int nome;
   int indice;
-  int r,va=0,vi=0;
+  int r,vi=0;
   int count = 0;
   int tamanho=0;
   int countif=1;
@@ -162,10 +163,10 @@ int main()
     if (strncmp(line, "function", 7) == 0) {
 	  tamanho=0;
 	  vi=0;
-      parametros = sscanf(line, "function f%c p%c1 p%c2 p%c3", &nome, &tipo[0], &tipo[1], &tipo[2]);
+      parametros = sscanf(line, "function f%d p%c1 p%c2 p%c3", &nome, &tipo[0], &tipo[1], &tipo[2]);
       parametros--;
-      printf(".globl f%c\n",nome);
-      printf("f%c :\n",nome);
+      printf(".globl f%d\n",nome);
+      printf("f%d :\n",nome);
       printf("     pushq %%rbp\n     movq %%rsp,%%rbp\n");  
    }
   
@@ -191,8 +192,9 @@ int main()
 	}
 	
 	while(auxtamanho % 16 !=0)auxtamanho++;
-		printf("     subq $%d,%%rsp\n",auxtamanho);
-	}
+            if(auxtamanho != 0)
+        printf("     subq $%d,%%rsp\n",auxtamanho);
+    }
 	// início atribuição de valores
 	atribuicao=1;
 	r = sscanf(line, "vi%d = ci%d %c ci%d", &indice,&constante,&operador,&constante2);
@@ -245,7 +247,7 @@ int main()
 	if(r==4 && operador == '-'){
 		printf("     movl -%d(%%rbp),%%r9d\n",var[indice2-1].endereco);
 		printf("     movl $%d,%%r8d\n",constante);
-		printf("     subl %%r9d,%%r8d\n",constante);
+		printf("     subl %%r9d,%%r8d\n");
 		printf("     movl %%r8d,-%d(%%rbp)\n",var[indice-1].endereco);
 		atribuicao=0;
 	}
@@ -260,9 +262,9 @@ int main()
 		printf("     movl -%d(%%rbp),%%ecx\n",var[indice2 - 1].endereco);
 		printf("     movl $0,%%edx\n");
 		printf("     movl %%ebx,%%eax\n");
-        printf("     divl %%ecx\n");
-        printf("     movl %%eax,-%d(%%rbp)\n",var[indice - 1].endereco);
-        atribuicao = 0;
+                printf("     divl %%ecx\n");
+                printf("     movl %%eax,-%d(%%rbp)\n",var[indice - 1].endereco);
+                atribuicao = 0;
 	}
 	if(r==4 &&  operador == '/' && parametros == 3){
 		printf("     movq %%rdx,-%d(%%rbp)\n",getPos);
@@ -270,7 +272,7 @@ int main()
 		printf("     movl -%d(%%rbp),%%ecx\n",var[indice2 - 1].endereco);
 		printf("     movl $0,%%edx\n");
 		printf("     movl %%ebx,%%eax\n");
-        printf("     divl %%ecx\n");
+                printf("     divl %%ecx\n");
         printf("     movl %%eax,-%d(%%rbp)\n",var[indice - 1].endereco);
         printf("     movq -%d(%%rbp),%%rdx\n",getPos);
         atribuicao = 0;
@@ -1022,7 +1024,7 @@ int main()
 		setarray=setarray - constante * 4;
 		printf("     movl $%d,-%d(%%rbp)\n",constante2,setarray);
 	}
-       // set com parâmetro
+       // set com parâmetro de array
     r = sscanf(line, "set pa%d index ci%d with pi%d ",&indice,&constante,&indice2);
     if(r==3 && indice == 1 && indice2 == 2){
        setarray = (constante-1) * 4;
@@ -1193,13 +1195,13 @@ int main()
 	}
 	
 	// fim returns
-	//end
+	// end
       if (strlen(line)==3)
       if (strncmp(line, "end", 3) == 0) {
       printf("     leave\n     ret\n");
       continue;
     } 
-	//end
+	// end
   }
   return 0;
 
